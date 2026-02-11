@@ -32,11 +32,21 @@ function clampToSliderRange(key, value) {
     return Math.min(max, Math.max(min, value));
 }
 
-function setParam(key, rawValue) {
+function setParamFromSlider(key, rawValue) {
     const value = clampToSliderRange(key, rawValue);
     params[key] = value;
     sliders[key].value = String(value);
     valueInputs[key].value = value.toFixed(2);
+}
+
+function setParamFromInputText(key, textValue) {
+    // 入力中はユーザーの入力文字列を壊さない（例: "1." や "-" など）
+    // 数値として解釈できるときだけ、params とスライダーを更新する
+    const parsed = textValue === '' ? NaN : parseFloat(textValue);
+    if (!Number.isFinite(parsed)) return;
+    const value = clampToSliderRange(key, parsed);
+    params[key] = value;
+    sliders[key].value = String(value);
 }
 
 // 値表示/同期
@@ -142,7 +152,7 @@ function drawGraph() {
 // スライダーイベント
 for (const key in sliders) {
     sliders[key].addEventListener('input', e => {
-        setParam(key, parseFloat(e.target.value));
+        setParamFromSlider(key, parseFloat(e.target.value));
         updateValueLabels();
         drawGraph();
     });
@@ -150,12 +160,22 @@ for (const key in sliders) {
 
 // 手動入力イベント（値欄）
 for (const key in valueInputs) {
-    valueInputs[key].addEventListener('change', e => {
+    valueInputs[key].addEventListener('input', e => {
+        setParamFromInputText(key, e.target.value);
+        drawGraph();
+    });
+    valueInputs[key].addEventListener('blur', e => {
         const raw = e.target.value;
         const parsed = raw === '' ? NaN : parseFloat(raw);
-        setParam(key, parsed);
+        setParamFromSlider(key, parsed);
         updateValueLabels();
         drawGraph();
+    });
+    valueInputs[key].addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur();
+        }
     });
 }
 
