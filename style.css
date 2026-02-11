@@ -38,6 +38,14 @@ input[type="range"] {
     margin: 0 1em;
 }
 
+.valueInput {
+    width: 6.2em;
+    padding: 0.15em 0.4em;
+    border: 1px solid #ccd;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
 #graph-container {
     display: flex;
     justify-content: center;

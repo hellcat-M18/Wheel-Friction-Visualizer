@@ -16,10 +16,33 @@ const sliders = {
     stiffness: document.getElementById('stiffness'),
 };
 
-// 値表示用
+// 値入力（手動入力用）
+const valueInputs = {
+    extremumSlip: document.getElementById('v_extremumSlip'),
+    extremumValue: document.getElementById('v_extremumValue'),
+    asymptoteSlip: document.getElementById('v_asymptoteSlip'),
+    asymptoteValue: document.getElementById('v_asymptoteValue'),
+    stiffness: document.getElementById('v_stiffness'),
+};
+
+function clampToSliderRange(key, value) {
+    const min = parseFloat(sliders[key].min);
+    const max = parseFloat(sliders[key].max);
+    if (!Number.isFinite(value)) return params[key];
+    return Math.min(max, Math.max(min, value));
+}
+
+function setParam(key, rawValue) {
+    const value = clampToSliderRange(key, rawValue);
+    params[key] = value;
+    sliders[key].value = String(value);
+    valueInputs[key].value = value.toFixed(2);
+}
+
+// 値表示/同期
 function updateValueLabels() {
     for (const key in sliders) {
-        document.getElementById('v_' + key).innerText = parseFloat(params[key]).toFixed(2);
+        valueInputs[key].value = parseFloat(params[key]).toFixed(2);
     }
 }
 
@@ -30,7 +53,7 @@ function frictionCurve(slip) {
     if (slip < extremumSlip) {
         // 0〜extremumSlipまで直線補間（最大グリップに向かう）
         value = extremumValue * (slip / extremumSlip);
-    } else if (slip < asymptoteSlip) {
+    } else if (slip < asymptoteSlip && asymptoteSlip > extremumSlip) {
         // extremumSlip〜asymptoteSlipでextremumValueからasymptoteValueへ直線補間
         value = extremumValue + (asymptoteValue - extremumValue) * ((slip - extremumSlip) / (asymptoteSlip - extremumSlip));
     } else {
@@ -119,7 +142,18 @@ function drawGraph() {
 // スライダーイベント
 for (const key in sliders) {
     sliders[key].addEventListener('input', e => {
-        params[key] = parseFloat(e.target.value);
+        setParam(key, parseFloat(e.target.value));
+        updateValueLabels();
+        drawGraph();
+    });
+}
+
+// 手動入力イベント（値欄）
+for (const key in valueInputs) {
+    valueInputs[key].addEventListener('change', e => {
+        const raw = e.target.value;
+        const parsed = raw === '' ? NaN : parseFloat(raw);
+        setParam(key, parsed);
         updateValueLabels();
         drawGraph();
     });
